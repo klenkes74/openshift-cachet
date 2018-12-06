@@ -233,8 +233,8 @@ objects:
     failedBuildsHistoryLimit: 5
     resources:
       limits:
-        cpu: 250m
-        memory: 128Mi
+        cpu: '1'
+        memory: 2Gi
     triggers:
     - type: 'ConfigChange'
     - type: 'ImageChange'
