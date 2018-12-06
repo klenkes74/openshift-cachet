@@ -94,6 +94,7 @@ function install() {
 
 pwd
 ls -la
+find / -name ".env"
 
 setup_directories
 download ${CACHET_VERSION}
