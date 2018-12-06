@@ -47,8 +47,10 @@ function remove_directories() {
 function download() {
     VERSION=$1
     echo -ne "Downloading cachet ${VERSION} ... "
-    curl -Ls https://github.com/cachethq/Cachet/archive/${VERSION}.tar.gz > /opt/app-root/downloads/cachet.tar.gz
+    curl https://github.com/cachethq/Cachet/archive/${VERSION}.tar.gz -o /opt/app-root/downloads/cachet.tar.gz
     echo ${VERSION} > /opt/app-root/src/cachet-version.txt
+
+    ls -la /opt/app-root/downloads
 
     echo "done"
 }
@@ -56,14 +58,14 @@ function download() {
 function download_installer() {
     VERSION=$1
 
-    echo -ne "Downloading composer ... "
-    curl -Ls https://getcomposer.org/installer > /opt/app-root/downloads/composer-setup.php
-    curl -Ls https://composer.github.io/installer.sig > /opt/app-root/downloads/composer-setup.sig
+    echo -ne "Downloading composer ${VERSION} ... "
+    curl https://getcomposer.org/installer -o /opt/app-root/downloads/composer-setup.php || exit 1
+    curl https://composer.github.io/installer.sig -o /opt/app-root/downloads/composer-setup.sig || exit 1
 
     echo -ne "checking SHA384 checksum ... "
     php -r "if (hash('SHA384', file_get_contents('/opt/app-root/downloads/composer-setup.php')) !== trim(file_get_contents('/opt/app-root/downloads/composer-setup.sig'))) { unlink('/opt/app-root/downloads/composer-setup.php'); echo 'FAILED' . PHP_EOL; exit(1); }" || exit 1
 
-    echo -ne " installing ${VERSION} ... "
+    echo -ne " installing ... "
     php /opt/app-root/downloads/composer-setup.php --version=${VERSION} --install-dir=/opt/app-root/bin || exit 1
     
     echo "done"
@@ -88,7 +90,7 @@ function install() {
 
 setup_directories
 download ${CACHET_VERSION}
-download_installer  ${PHP_COMPOSER_VERSION}
+download_installer ${PHP_COMPOSER_VERSION}
 install
 install_run_script
 remove_directories
