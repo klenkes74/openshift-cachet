@@ -275,6 +275,7 @@ objects:
         from:
           kind: ImageStreamTag
           name: "php72:${PHP_BASE_IMAGE_VERSION}"
+          namespace: 'openshift'
       env:
       - name: 'CACHET_VERSION'
         value: "${CACHET_VERSION}"
@@ -636,19 +637,6 @@ objects:
                   name: "${APPLICATION_NAME}-config"
                   key: 'TRUSTED_PROXIES'
 
-- kind: PersistentVolumeClaim
-  apiVersion: v1
-  metadata:
-    name: "${APPLICATION_NAME}-upload-data"
-    labels:
-      name: "${APPLICATION_NAME}"
-      delete: "${APPLICATION_NAME}-app"
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: "${UPLOAD_SPACE_SIZE}"
 - kind: Service
   apiVersion: v1
   metadata:
