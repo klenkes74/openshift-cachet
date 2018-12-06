@@ -138,7 +138,6 @@ initialize_system() {
 
   # configure env file
 
-  pwd
   cd /opt/app-root/src/config
   cp ../.env.template .env
   sed 's,{{APP_ENV}},'"${APP_ENV}"',g' -i .env
@@ -185,8 +184,6 @@ initialize_system() {
   sed 's,{{NEXMO_KEY}},'"${NEXMO_KEY}"',g' -i .env
   sed 's,{{NEXMO_SECRET}},'"${NEXMO_SECRET}"',g' -i .env
   sed 's,{{NEXMO_SMS_FROM}},'"${NEXMO_SMS_FROM}"',g' -i .env
-
-  sed 's,{{PHP_MAX_CHILDREN}},'"${PHP_MAX_CHILDREN}"',g' -i /etc/php7/php-fpm.d/www.conf
 
   sed 's,{{TRUSTED_PROXIES}},'"${TRUSTED_PROXIES}"',g' -i .env
 
