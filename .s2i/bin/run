@@ -185,7 +185,7 @@ initialize_system() {
 
   sed 's,{{PHP_MAX_CHILDREN}},'"${PHP_MAX_CHILDREN}"',g' -i /etc/php7/php-fpm.d/www.conf
 
-  sed 's,{{TRUSTED_PROXIES}},'"${TRUSTED_PROXIES}"',g' -i /var/www/html/.env
+  sed 's,{{TRUSTED_PROXIES}},'"${TRUSTED_PROXIES}"',g' -i .env
 
   if [[ -z "${APP_KEY}" ]]; then
     keygen="$(php artisan key:generate)"
