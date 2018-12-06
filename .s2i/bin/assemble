@@ -71,9 +71,10 @@ function download_installer() {
 
 
 function install() {
+    df -h
 
     echo -ne "installing requirements ... "
-    php /opt/app-root/bin/composer.phar global require "hirak/prestissimo:^0.3" -q || exit 2
+    php /opt/app-root/bin/composer.phar global require "hirak/prestissimo:^0.3" || exit 2
     echo "done"
 
     echo -ne "Unpacking ... "
