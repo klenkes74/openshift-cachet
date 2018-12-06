@@ -39,6 +39,7 @@ function remove_directories() {
 
     remove_directory /opt/app-root/downloads
     remove_directory /opt/app-root/bin
+    remove_directory src/.git
 
     echo "done"
 }
@@ -82,7 +83,7 @@ function install() {
     php /opt/app-root/bin/composer.phar install -o -q || exit 2
 
     echo -ne "copy config ... "
-    cp conf/.env .env
+    cp src/conf/.env .env
 
     echo -ne "cleaning cache ... "
     rm -rf /opt/app-root/src/.composer
