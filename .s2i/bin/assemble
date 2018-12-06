@@ -84,10 +84,13 @@ function install() {
 
     echo -ne "copy config ... "
     cp /tmp/src/conf/.env .env.template
+    mkdir conf/
+    touch conf/.env
+    ln -s conf/.env .env
+    rm conf/.env
 
     echo -ne "cleaning cache ... "
     rm -rf /opt/app-root/src/.composer
-    rm -rf bootstrap/cache/*
 
     echo "done"
 }
