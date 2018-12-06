@@ -4,70 +4,6 @@ set -o errexit -o nounset -o pipefail
 
 [ "${DEBUG:-false}" == true ] && set -x
 
-check_database_connection() {
-  echo "Attempting to connect to database ..."
-  case "${DB_DRIVER}" in
-    mysql)
-      prog="mysqladmin -h ${STATUS_DB_SERVICE_HOST} -u ${DB_USER} ${DB_PASSWORD:+-p$DB_PASSWORD} -P ${DB_PORT} status"
-      ;;
-    pgsql)
-      prog="/usr/bin/pg_isready"
-      prog="${prog} -h ${STATUS_DB_SERVICE_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_DATABASE} -t 1"
-      ;;
-    sqlite)
-      prog="touch /var/www/html/database/database.sqlite"
-  esac
-  timeout=60
-  while ! ${prog} >/dev/null 2>&1
-  do
-    timeout=$(( timeout - 1 ))
-    if [[ "$timeout" -eq 0 ]]; then
-      echo
-      echo "Could not connect to database server! Aborting..."
-      exit 1
-    fi
-    echo -n "."
-    sleep 1
-  done
-  echo
-}
-
-checkdbinitmysql() {
-    table=sessions
-    if [[ "$(mysql -N -s -h "${STATUS_DB_SERVICE_HOST}" -u "${DB_USER}" "${DB_PASSWORD:+-p$DB_PASSWORD}" "${DB_DATABASE}" -P "${DB_PORT}" -e \
-        "select count(*) from information_schema.tables where \
-            table_schema='${DB_DATABASE}' and table_name='${DB_PREFIX}${table}';")" -eq 1 ]]; then
-        echo "Table ${DB_PREFIX}${table} exists! ..."
-    else
-        echo "Table ${DB_PREFIX}${table} does not exist! ..."
-        init_db
-    fi
-
-}
-
-checkdbinitpsql() {
-    table=sessions
-    export PGPASSWORD=${DB_PASSWORD}
-    if [[ "$(psql -h "${STATUS_DB_SERVICE_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_DATABASE}" -c "SELECT to_regclass('${DB_PREFIX}${table}');" | grep -c "${DB_PREFIX}${table}")" -eq 1 ]]; then
-        echo "Table ${DB_PREFIX}${table} exists! ..."
-    else
-        echo "Table ${DB_PREFIX}${table} does not exist! ..."
-        init_db
-    fi
-
-}
-
-check_configured() {
-  case "${DB_DRIVER}" in
-    mysql)
-      checkdbinitmysql
-      ;;
-    pgsql)
-      checkdbinitpsql
-      ;;
-  esac
-}
-
 initialize_system() {
   echo "Initializing Cachet container ..."
 
@@ -224,8 +160,7 @@ seed_db() {
 
 start_system() {
   initialize_system
-  check_database_connection
-  check_configured
+  init_db
   migrate_db
   seed_db
   echo "Starting Cachet! ..."
