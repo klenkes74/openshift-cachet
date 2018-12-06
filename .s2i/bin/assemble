@@ -1,0 +1,105 @@
+#!/bin/bash -e
+#
+# Copyright (C) 2018  Kaiserpfalz-EDV Service, Roland T. Lichti
+# This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+# This is free software, and you are welcome to redistribute it
+# under certain conditions; type `show c' for details.
+#
+
+function create_directory() {
+    DIRECTORY=$1
+
+    if [ ! -d ${DIRECTORY} ] ; then
+        echo -ne "creating ${DIRECTORY} ... "
+        mkdir -p ${DIRECTORY}
+    fi
+}
+
+function setup_directories() {
+    echo -ne "Setup needed directories ... "
+
+    create_directory /opt/app-root/downloads
+    create_directory /opt/app-root/bin
+
+    echo "done"
+}
+
+function remove_directory() {
+    DIRECTORY=$1
+
+
+    if [ -d ${DIRECTOR} ] ; then
+        echo -ne "removing ${DIRECTORY}"
+        rm -rf ${DIRECTORY}
+    fi
+}
+
+function remove_directories() {
+    echo -ne "Removing installation directories ... "
+
+    remove_directory /opt/app-root/downloads
+    remove_directory /opt/app-root/bin
+
+    echo "done"
+}
+
+
+function download() {
+    VERSION=$1
+    echo -ne "Downloading cachet ${VERSION} ... "
+    curl -Ls https://github.com/cachethq/Cachet/archive/${VERSION}.tar.gz > /opt/app-root/downloads/cachet.tar.gz
+    echo ${VERSION} > /opt/app-root/src/cachet-version.txt
+    echo "done"
+
+    echo -ne "Checking MD5 checksum ... "
+    TARBALL_MD5=$(md5sum /opt/app-root/downloads/cachet.tar.gz | cut -d ' ' -f 1)
+    EXPECTS_MD5=$(curl -Ls https://github.com/cachethq/Cachet/archive/${VERSION}.tar.gz.md5)
+
+    if [ "${TARBALL_SHA1}" != "${EXPECTS_SHA1}" ]; then
+        echo -e "FAILED: WordPress ${VERSION} MD5 checksum mismatch.\n\t\tThe WordPress tar file that was downloaded does not match the signature that it was expected to have."
+        echo -e "\t\tTarball has sum ${TARBALL_SHA1}"
+        echo -e "\t\tExpected sum is ${EXPECTS_SHA1}"
+        exit 1
+    else
+        echo "done"
+    fi
+}
+
+function download_installer() {
+    VERSION=$1
+
+    echo -ne "Downloading composer ... "
+    curl -Ls https://getcomposer.org/installer > /opt/app-root/downloads/composer-setup.php
+    curl -Ls https://composer.github.io/installer.sig > /opt/app-root/downloads/composer-setup.sig
+
+    echo -ne "checking SHA384 checksum ... "
+    php -r "if (hash('SHA384', file_get_contents('/opt/app-root/downloads/composer-setup.php')) !== trim(file_get_contents('/opt/app-root/downloads/composer-setup.sig'))) { unlink('/opt/app-root/downloads/composer-setup.php'); echo 'FAILED' . PHP_EOL; exit(1); }" || exit 1
+
+    echo -ne " installing ${VERSION} ... "
+    php /opt/app-root/downloads/composer-setup --version=${VERSION} --install-dir=/opt/app-root/bin || exit 1
+    echo "done"
+}
+
+
+function install() {
+    echo -ne "Unpacking ... "
+    tar --strip-components=1 -xzf /opt/app-root/downloads/cachet.tar.gz
+
+    echo -ne "installing requirements ... "
+    php /opt/app-root/bin/composer.phar global require "hirak/prestissimo:^0.3" || exit 2
+
+    echo -ne "installing ... "
+    php /opt/app-root/bin/composer.phar install -o || exit 2
+
+    echo -ne "cleaning cache ... "
+    rm -rf bootstrap/cache/*
+
+    echo "done"
+}
+
+setup_directories
+download ${CACHET_VERSION}
+download_installer  ${COMPOSER_VERSION}
+install
+install_run_script
+remove_directories

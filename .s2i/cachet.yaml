@@ -1,0 +1,806 @@
+# Copyright (C) 2018  Kaiserpfalz-EDV Service, Roland T. Lichti
+# This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+# This is free software, and you are welcome to redistribute it
+# under certain conditions; type `show c' for details.
+
+apiVersion: v1
+kind: Template
+metadata:
+  name: cachet
+  labels:
+    template: cachet
+  annotations:
+    description: >-
+      A cachet service
+    iconClass: icon-apache
+    openshift.io/display-name: Cachet application status page
+    openshift.io/documentation-url: 'https://github.com/klenkes74/openshift-cachet'
+    openshift.io/long-description: >-
+      A service status page provided by cachet.
+    openshift.io/provider-display-name: 'Kaiserpfalz EDV-Service, Roland T. Lichti'
+    openshift.io/support-url: 'https://www.kaiserpfalz-edv.de'
+    tags: 'httpd,php,cachet'
+    template.openshift.io/bindable: 'true'
+parameters:
+- name: 'CACHET_VERSION'
+  displayName: 'Cachet-Version'
+  value: 'master'
+  required: true
+- name: 'REPOSITORY'
+  displayName: 'Git Repository'
+  description: 'Git repository containing all site specific data'
+  required: true
+- name: 'REPOSITORY_CONTEXTDIR'
+  displayName: 'Context Directory'
+  description: 'Directory within repository.'
+  value: '/'
+  required: true
+- name: 'REPOSITORY_TAG'
+  displayName: 'Git Tag'
+  description: 'Tag inside the git repo to use.'
+  value: 'master'
+  required: true
+
+- name: 'APPLICATION_NAME'
+  displayName: 'Site'
+  description: 'Name of this cachet site'
+  required: true
+- name: 'APP_URL'
+  displayName: 'Site URI'
+  description: 'URL of the site'
+  required: true
+- name: 'APPLICATION_VERSION'
+  displayName: 'Site Version'
+  description: 'Version of the Site'
+  value: 'latest'
+  required: true
+- name: 'APP_DEBUG'
+  display: 'Activate DEBUG'
+  description: 'Activate the debugging of cachet'
+  value: 'false'
+  required: true
+- name: 'APP_KEY'
+  display: 'Application key'
+  description: 'Application key for this cachet installation'
+  generate: 'expression'
+  from: '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
+  required: true
+- name: 'MAIL_HOST'
+  displayName: 'SMTP host'
+  description: 'Hostname of the SMTP outbound server.'
+- name: 'MAIL_PORT'
+  displayName: 'SMTP port'
+  description: 'Port of the mail server.'
+  value: '25'
+- name: 'MAIL_USER'
+  displayName: 'SMTP user'
+  description: 'Username for SMTP authentication.'
+- name: 'MAIL_PASSWORD'
+  displayName: 'SMTP password'
+  description: 'Password for SMTP authentication.'
+- name: 'MAIL_ADDRESS'
+  displayName: 'From Address'
+  description: 'Address sending the email'
+- name: 'MAIL_NAME'
+  displayName: 'Mail sender'
+  description: 'Name of the mail sender of automatic generated mails'
+- name: 'MAIL_ENCRYPTION'
+  displayName: 'Encrypt Mail'
+
+- name: 'CACHE_DRIVER'
+  displayName: 'PHP cache driver'
+  value: 'apc'
+  required: true
+- name: 'SESSION_DRIVER'
+  displayName: 'PHP session driver'
+  value: ''
+- name: 'SESSION_DOMAIN'
+  displayName: 'HTTP session domain'
+  value: ''
+- name: 'SESSION_SECURE_COOKIE'
+  displayName: 'HTTP secuire cookie'
+  value: ''
+- name: 'QUEUE_DRIVER'
+  displayName: 'Cachet queue driver'
+  value: 'database'
+  required: true
+- name: 'CACHET_EMOJI'
+  displayName: 'Cachet emoji'
+  value: 'false'
+  required: true
+- name: 'CACHET_BEACON'
+  displayName: 'Cachet beacon'
+  value: 'false'
+  required: true
+- name: 'CACHET_AUTO_TWITTER'
+  displayName: 'Cachet auto twitter'
+  value: 'true'
+  required: true
+- name: 'REDIS_HOST'
+  displayName: 'Redis host'
+- name: 'REDIS_DATABASE'
+  displayName: 'Redis database'
+- name: 'REDIS_PORT'
+  displayName: 'Redis port'
+- name: 'REDIS_PASSWORD'
+  displayName: 'Redis password'
+- name: 'GITHUB_TOKEN'
+  displayName: 'Github token'
+- name: 'NEXMO_KEY'
+  displayName: 'NEXMO key'
+- name: 'NEXMO_SECRET'
+  displayName: 'NEXMO secret'
+- name: 'NEXMO_SMS_FROM'
+  displayName: 'NEXMO SMS from'
+  value: 'Cachet'
+- name: 'TRUSTED_PROXIES'
+  displayName: 'Trusted proxies'
+
+- name: 'WEBSERVER_MEMORY_LIMIT'
+  displayName: 'Maximum used memory (Webserver)'
+  description: 'Maximum memory usage of this pod.'
+  value: "512Mi"
+  required: true
+- name: 'WEBSERVER_MEMORY_REQUESTS'
+  displayName: 'Minimum required memory (Webserver)'
+  description: 'The minimum required memory for this site.'
+  value: "128Mi"
+  required: true
+- name: 'WEBSERVER_CPU_LIMIT'
+  displayName: 'Maximum used CPU (Webserver)'
+  description: 'Maximum CPU usage of this pod.'
+  value: '1'
+  required: true
+- name: 'WEBSERVER_CPU_REQUESTS'
+  displayName: 'Mimimum required CPU (Webserver)'
+  description: 'The minumum required CPU for this site.'
+  value: '50m'
+  required: true
+- name: 'DATABASE_SIZE'
+  displayName: 'Maximum size of database'
+  value: '1Gi'
+  required: true
+- name: 'DATABASE_MEMORY_LIMIT'
+  displayName: 'Maximum used memory (Database)'
+  description: 'Maximum memory usage of this pod.'
+  value: "512Mi"
+  required: true
+- name: 'DATABASE_MEMORY_REQUESTS'
+  displayName: 'Minimum required memory (Database)'
+  description: 'The minimum required memory for this site.'
+  value: "128Mi"
+  required: true
+- name: 'DATABASE_CPU_LIMIT'
+  displayName: 'Maximum used CPU (Database)'
+  description: 'Maximum CPU usage of this pod.'
+  value: '1'
+  required: true
+- name: 'DATABASE_CPU_REQUESTS'
+  displayName: 'Mimimum required CPU (Database)'
+  description: 'The minumum required CPU for this site.'
+  value: '50m'
+  required: true
+- name: 'DATABASE_NAME'
+  displayName: 'Database name'
+  generate: 'expression'
+  from: 'db[a-f0-9]{16}'
+  required: true
+- name: 'DATABASE_TABLE_PREFIX'
+  displayName: 'Prefix'
+  description: 'Prefix for all database tables generated'
+  generate: 'expression'
+  from: 'wp[a-f0-9]{3}_'
+  requried: true
+- name: 'DATABASE_USER'
+  displayName: 'Database user'
+  generate: 'expression'
+  from: 'user[a-f0-9]{4}'
+  required: true
+- name: 'DATABASE_PASSWORD'
+  displayName: 'Database password'
+  generate: 'expression'
+  from: '[a-zA-Z0-9]{32}'
+  required: true
+- name: 'PHP_BASE_IMAGE_VERSION'
+  displayName: 'PHP Version to use'
+  value: 'latest'
+  required: true
+- name: 'PHP_COMPOSER_VERSION'
+  displayName: 'PHP Composer Version'
+  value: '1.6.3'
+  required: true
+- name: 'MYSQL_VERSION'
+  description: 'Tag of the MySQL database version'
+  value: '5.7'
+  required: true
+objects:
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: "cachet"
+    labels:
+      app: "cachet"
+      delete: "cachet"
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: "cachet"
+    labels:
+      app: "cachet"
+      delete: "cachet"
+  spec:
+    successfulBuildsHistoryLimit: 2
+    failedBuildsHistoryLimit: 5
+    resources:
+      limits:
+        cpu: 250m
+        memory: 128Mi
+    triggers:
+    - type: 'ConfigChange'
+    - type: 'ImageChange'
+    source:
+      type: 'Git'
+      git:
+        uri: "${REPOSITORY}"
+        ref: "${REPOSITORY_TAG}"
+      contextDir: "${REPOSITORY_CONTEXTDIR}"
+      strategy:
+        type: 'Source'
+        sourceStrategy:
+      completionDeadlineSeconds: 120
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'cachet:${CACHET_VERSION}'
+      imageLabels:
+      - name: 'delete'
+        value: "cachet"
+      - name: 'io.k8s.display-name'
+        value: "cachet image"
+      - name: 'io.k8s.description'
+        value: "cachet ${CACHET_VERSION} (based on PHP ${PHP_BASE_IMAGE_VERSION})"
+      - name: 'io.openshift.s2i.scripts-url'
+        value: 'image:///usr/libexec/s2i'
+      - name: 'io.s2i.scripts-url'
+        value: 'image:///usr/libexec/s2i'
+      - name: 'io.openshift.tags'
+        value: 'builder,php,wordpress,cachet'
+      - name: 'template'
+        value: 'cachet'
+      - name: 'io.openshift.expose-services'
+        value: '8080:http'
+    strategy:
+      type: Source
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: "php72:${PHP_BASE_IMAGE_VERSION}"
+      env:
+      - name: 'CACHET_VERSION'
+        value: "${CACHET_VERSION}"
+      - name: 'PHP_COMPOSER_VERSION'
+        value: "${PHP_COMPOSER_VERSION}"
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-db-config"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-db"
+  stringData:
+    service: "${APPLICATION_NAME}-db"
+    database: "${DATABASE_NAME}"
+    prefix: "${DATABASE_TABLE_PREFIX}"
+    user: "${DATABASE_USER}"
+    password: "${DATABASE_PASSWORD}"
+    rootpassword: "${DATABASE_PASSWORD}"
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-mail-config"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  stringData:
+    host: "${MAIL_HOST}"
+    port: "${MAIL_PORT}"
+    address: "${MAIL_ADDRESS}"
+    name: "${MAIL_NAME}"
+    encryption: "${MAIL_ENCRYPTION}"
+    user: "${MAIL_USER}"
+    password: "${MAIL_PASSWORD}"
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-redis-config"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  stringData:
+    host: "${REDIS_HOST}"
+    database: "${REDIS_DATABASE}"
+    port: "${REDIS_PORT}"
+    password: "${REDIS_PASSWORD}"
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-nexmo-config"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  stringData:
+    key: "${NEXMO_KEY}"
+    secret: "${NEXMO_SECRET}"
+    from: "${MEXMO_SMS_FROM}"
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-github-config"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  stringData:
+    token: "${GITHUB_TOKEN}"
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-appkey"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  stringData:
+    key: "${APP_KEY}"
+- kind: ConfigMap
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-config"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  data:
+    APP_ENV: "${APP_ENV}"
+    APP_DEBUG: "${APP_DEBUG}"
+    APP_URL: "${APP_URL}"
+    APP_LOG: "${APP_LOG}"
+    CACHE_DRIVER: "${CACHE_DRIVER}"
+    SESSION_DRIVER: "${SESSION_DRIVER}"
+    SESSION_DOMAIN: "${SESSION_DOMAIN}"
+    SESSION_SECURE_COOKIE: "${SESSION_SECURE_COOKIE}"
+    QUEUE_DRIVER: "${QUEUE_DRIVER}"
+    CACHET_EMOJI: "${CACHET_EMOJI}"
+    CACHET_BEACON: "${CACHET_BEACON}"
+    CACHET_AUTO_TWITTER: "${CACHET_AUTO_TWITTER}"
+    TRUSTED_PROXIES: "${TRUSTED_PROXIES}"
+- kind: DeploymentConfig
+  apiVersion: apps.openshift.io/v1
+  metadata:
+    name: "${APPLICATION_NAME}-app"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 3
+    selector:
+      app: "${APPLICATION_NAME}"
+      deploymentConfig: "${APPLICATION_NAME}-app"
+    strategy:
+      type: Recreate
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+          - wordpress
+          from:
+            kind: ImageStreamTag
+            name: "cachet:${CACHET_VERSION}"
+    template:
+      metadata:
+        labels:
+          app: "${APPLICATION_NAME}"
+          deploymentConfig: "${APPLICATION_NAME}-app"
+      spec:
+        volumes:
+          - name: 'cache'
+            emptyDir: {}
+        containers:
+        - name: "cachet"
+          image: "cachet:${CACHET_VERSION}"
+          resources:
+            requests:
+              cpu: "${WEBSERVER_CPU_REQUESTS}"
+              memory: "${WEBSERVER_MEMORY_REQUESTS}"
+            limits:
+              cpu: "${WEBSERVER_CPU_LIMIT}"
+              memory: "${WEBSERVER_MEMORY_LIMIT}"
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              scheme: 'HTTP'
+              port: 8080
+              path: '/'
+              httpHeaders:
+                - name: 'X-Forwarded-Proto'
+                  value: 'https'
+            failureThreshold: 3
+            successThreshold: 1
+            initialDelayTimeout: 5
+            timeoutSeconds: 1
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              scheme: 'HTTP'
+              port: 8080
+              path: '/'
+            httpHeaders:
+              - name: 'X-Forwarded-Proto'
+                value: 'https'
+            failureThreshold: 3
+            successThreshold: 1
+            initialDelayTimeout: 5
+            timeoutSeconds: 1
+            periodSeconds: 5
+          env:
+            - name: 'APP_KEY'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-appkey"
+                  key: 'key'
+            - name: 'APP_ENV'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'APP_ENV'
+            - name: 'DEBUG'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'APP_DEBUG'
+            - name: 'APP_DEBUG'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'APP_DEBUG'
+            - name: 'APP_URL'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'APP_URL'
+            - name: 'APP_LOG'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'APP_LOG'
+
+            - name: 'DB_DRIVER'
+              value: 'mysql'
+            - name: 'DB_HOST'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-db-config"
+                  key: 'service'
+            - name: 'DB_DATABASE'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-db-config"
+                  key: 'database'
+            - name: 'DB_PREFIX'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-db-config"
+                  key: 'prefix'
+            - name: 'DB_USER'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-db-config"
+                  key: 'user'
+            - name: 'DB_PASSWORD'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-db-config"
+                  key: 'password'
+            - name: 'DB_PORT'
+              value: '3306'
+
+            - name: 'MAIL_HOST'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-mail-config"
+                  key: 'host'
+            - name: 'MAIL_PORT'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-mail-config"
+                  key: 'MAIL_PORT'
+            - name: 'port'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-mail-config"
+                  key: 'MAIL_ADDRESS'
+            - name: 'address'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-mail-config"
+                  key: 'name'
+            - name: 'MAIL_ENCRYPTION'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-mail-config"
+                  key: 'encryption'
+            - name: 'MAIL_USERNAME'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-mail-config"
+                  key: 'user'
+            - name: 'MAIL_PASSWORD'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-mail-config"
+                  key: 'password'
+
+            - name: 'CACHE_DRIVER'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'CACHE_DRIVER'
+
+            - name: 'SESSION_DRIVER'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'SESSION_DRIVER'
+            - name: 'SESSION_DOMAIN'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'SESSION_DOMAIN'
+            - name: 'SESSION_SECURE_COOKIE'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'SESSION_SECURE_COOKIE'
+
+            - name: 'QUEUE_DRIVER'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'QUEUE_DRIVER'
+            - name: 'CACHET_EMOJI'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'CACHET_EMOJI'
+            - name: 'CACHET_BEACON'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'CACHET_BEACON'
+            - name: 'CACHET_AUTO_TWITTER'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'CACHET_AUTO_TWITTER'
+
+            - name: 'REDIS_HOST'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-redis-config"
+                  key: 'host'
+            - name: 'REDIS_DATABASE'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-redis-config"
+                  key: 'database'
+            - name: 'REDIS_PORT'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-redis-config"
+                  key: 'port'
+            - name: 'REDIS_PASSWORD'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-redis-config"
+                  key: 'password'
+
+            - name: 'GITHUB_TOKEN'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-github-config"
+                  key: 'token'
+
+            - name: 'NEXMO_KEY'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-nexmo-config"
+                  key: 'key'
+            - name: 'NEXMO_SECRET'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-nexmo-config"
+                  key: 'secret'
+            - name: 'NEXMO_SMS_FROM'
+              valueFrom:
+                secretKeyRef:
+                  name: "${APPLICATION_NAME}-nexmo-config"
+                  key: 'from'
+
+            - name: 'TRUSTED_PROXIES'
+              valueFrom:
+                configMapKeyRef:
+                  name: "${APPLICATION_NAME}-config"
+                  key: 'TRUSTED_PROXIES'
+
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-upload-data"
+    labels:
+      name: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: "${UPLOAD_SPACE_SIZE}"
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-app"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  spec:
+    ports:
+    - name: '8080-tcp'
+      protocol: 'TCP'
+      port: 8080
+      targetPort: 8080
+    - name: '8443-tcp'
+      protocol: 'TCP'
+      port: 8443
+      targetPort: 8443
+    selector:
+      app: "${APPLICATION_NAME}"
+      deploymentconfig: "${APPLICATION_NAME}-app"
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-app"
+  spec:
+    host: "${APP_URL}"
+    to:
+      kind: Service
+      name: "${APPLICATION_NAME}-app"
+      weight: 100
+    port:
+      targetPort: 8080-tcp
+    tls:
+      termination: 'edge'
+      insecureEdgeTerminationPolicy: 'Redirect'
+- kind: DeploymentConfig
+  apiVersion: apps.openshift.io/v1
+  metadata:
+    name: "${APPLICATION_NAME}-db"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-db"
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - mysql
+        from:
+          kind: ImageStreamTag
+          namespace: 'openshift'
+          name: "mysql:${MYSQL_VERSION}"
+    selector:
+      app: "${APPLICATION_NAME}"
+      deploymentconfig: "${APPLICATION_NAME}-db"
+    template:
+      metadata:
+        labels:
+          app: "${APPLICATION_NAME}"
+          deploymentconfig: "${APPLICATION_NAME}-db"
+      spec:
+        volumes:
+        - name: 'data'
+          persistentVolumeClaim:
+            claimName: "${APPLICATION_NAME}-mysql-data"
+        containers:
+        - name: 'mysql'
+          image: 'mysql'
+          ports:
+          - containerPort: 3306
+            protocol: 'TCP'
+          volumeMounts:
+          - name: 'data'
+            mountPath: '/var/lib/mysql/data'
+          resources:
+            requests:
+              cpu: "${DATABASE_CPU_REQUESTS}"
+              memory: "${DATABASE_MEMORY_REQUESTS}"
+            limits:
+              cpu: "${DATABASE_CPU_LIMIT}"
+              memory: "${DATABASE_MEMORY_LIMIT}"
+            readinessProbe:
+              timeoutSeconds: 1
+              initialDelaySeconds: 10
+              successThreshold: 1
+              failureThreshold: 3
+              exec:
+                command:
+                  - "/bin/sh"
+                  - "-i"
+                  - "-c"
+                  - "MYSQL_PWD=\"${MYSQL_PASSWORD}\" mysql -h 127.0.0.1 -u ${MYSQL_USER} -D ${MYSQL_DATABASE} -e 'SELECT 1'"
+            livenessProbe:
+              timeoutSeconds: 1
+              initialDelaySeconds: 30
+              tcpSocket:
+                port: 3306
+          env:
+          - name: 'MYSQL_DATABASE'
+            valueFrom:
+              secretKeyRef:
+                name: "${APPLICATION_NAME}-db-config"
+                key: 'database'
+          - name: 'MYSQL_USER'
+            valueFrom:
+              secretKeyRef:
+                name: "${APPLICATION_NAME}-db-config"
+                key: 'user'
+          - name: 'MYSQL_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: "${APPLICATION_NAME}-db-config"
+                key: 'password'
+          - name: 'MYSQL_ROOT_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: "${APPLICATION_NAME}-db-config"
+                key: 'rootpassword'
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-db"
+    labels:
+      app: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-db"
+  spec:
+    ports:
+    - name: '3306-tcp'
+      protocol: 'TCP'
+      port: 3306
+      targetPort: 3306
+    selector:
+      app: "${APPLICATION_NAME}"
+      deploymentconfig: "${APPLICATION_NAME}-db"
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-mysql-data"
+    labels:
+      name: "${APPLICATION_NAME}"
+      delete: "${APPLICATION_NAME}-db"
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: "${DATABASE_SIZE}"
