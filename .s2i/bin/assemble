@@ -71,9 +71,7 @@ function download_installer() {
 
 
 function install() {
-    df -h
-
-    echo -ne "installing requirements ... "
+    echo -ne "Installing requirements ... "
     php /opt/app-root/bin/composer.phar global require "hirak/prestissimo:^0.3" -q || exit 2
     echo "done"
 
@@ -94,5 +92,4 @@ setup_directories
 download ${CACHET_VERSION}
 download_installer ${PHP_COMPOSER_VERSION}
 install
-install_run_script
 remove_directories
