@@ -83,7 +83,7 @@ function install() {
     php /opt/app-root/bin/composer.phar install -o -q || exit 2
 
     echo -ne "copy config ... "
-    cp /tmp/src/conf/.env .env
+    cp /tmp/src/conf/.env .env.template
 
     echo -ne "cleaning cache ... "
     rm -rf /opt/app-root/src/.composer

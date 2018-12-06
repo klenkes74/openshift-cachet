@@ -393,7 +393,7 @@ objects:
         imageChangeParams:
           automatic: true
           containerNames:
-          - wordpress
+          - cachet
           from:
             kind: ImageStreamTag
             name: "cachet:${CACHET_VERSION}"
@@ -404,6 +404,8 @@ objects:
           deploymentConfig: "${APPLICATION_NAME}-app"
       spec:
         volumes:
+          - name: 'config'
+            emptyDir: {}
           - name: 'cache'
             emptyDir: {}
         containers:
@@ -447,6 +449,11 @@ objects:
             initialDelayTimeout: 5
             timeoutSeconds: 1
             periodSeconds: 5
+          mountVolume:
+            - name: 'config'
+              mountPath: '/opt/app-root/src/config'
+            - name: 'cache'
+              mountPath: '/opt/app-root/src/bootstrap/cache'
           env:
             - name: 'APP_KEY'
               valueFrom:

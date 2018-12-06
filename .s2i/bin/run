@@ -138,6 +138,8 @@ initialize_system() {
 
   # configure env file
 
+  cd config
+  cp ../.env.template .env
   sed 's,{{APP_ENV}},'"${APP_ENV}"',g' -i .env
   sed 's,{{APP_DEBUG}},'"${APP_DEBUG}"',g' -i .env
   sed 's,{{APP_URL}},'"${APP_URL}"',g' -i .env
@@ -190,7 +192,7 @@ initialize_system() {
   if [[ -z "${APP_KEY}" ]]; then
     keygen="$(php artisan key:generate)"
     APP_KEY=$(echo "${keygen}" | grep -oP '(?<=\[).*(?=\])')
-    echo "ERROR: Please set the 'APP_KEY=${APP_KEY}' environment variable at runtime or in docker-compose.yml and re-launch"
+    echo "ERROR: Please set the 'APP_KEY=${APP_KEY}' environment variable at runtime or in the secret for the appkey and re-launch"
     exit 0
   fi
 
@@ -198,6 +200,7 @@ initialize_system() {
 
   # remove empty lines
   sed '/^.*=""$/d'  -i .env
+  cd ..
 
   rm -rf bootstrap/cache/*
 }
