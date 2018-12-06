@@ -92,6 +92,9 @@ function install() {
     echo "done"
 }
 
+pwd
+ls -la
+
 setup_directories
 download ${CACHET_VERSION}
 download_installer ${PHP_COMPOSER_VERSION}
