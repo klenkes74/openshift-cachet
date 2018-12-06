@@ -1,17 +1,18 @@
 #!/bin/bash
 set -o errexit -o nounset -o pipefail
 
+
 [ "${DEBUG:-false}" == true ] && set -x
 
 check_database_connection() {
   echo "Attempting to connect to database ..."
   case "${DB_DRIVER}" in
     mysql)
-      prog="mysqladmin -h ${DB_HOST} -u ${DB_USER} ${DB_PASSWORD:+-p$DB_PASSWORD} -P ${DB_PORT} status"
+      prog="mysqladmin -h ${STATUS_DB_SERVICE_HOST} -u ${DB_USER} ${DB_PASSWORD:+-p$DB_PASSWORD} -P ${DB_PORT} status"
       ;;
     pgsql)
       prog="/usr/bin/pg_isready"
-      prog="${prog} -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_DATABASE} -t 1"
+      prog="${prog} -h ${STATUS_DB_SERVICE_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_DATABASE} -t 1"
       ;;
     sqlite)
       prog="touch /var/www/html/database/database.sqlite"
@@ -33,7 +34,7 @@ check_database_connection() {
 
 checkdbinitmysql() {
     table=sessions
-    if [[ "$(mysql -N -s -h "${DB_HOST}" -u "${DB_USER}" "${DB_PASSWORD:+-p$DB_PASSWORD}" "${DB_DATABASE}" -P "${DB_PORT}" -e \
+    if [[ "$(mysql -N -s -h "${STATUS_DB_SERVICE_HOST}" -u "${DB_USER}" "${DB_PASSWORD:+-p$DB_PASSWORD}" "${DB_DATABASE}" -P "${DB_PORT}" -e \
         "select count(*) from information_schema.tables where \
             table_schema='${DB_DATABASE}' and table_name='${DB_PREFIX}${table}';")" -eq 1 ]]; then
         echo "Table ${DB_PREFIX}${table} exists! ..."
@@ -47,7 +48,7 @@ checkdbinitmysql() {
 checkdbinitpsql() {
     table=sessions
     export PGPASSWORD=${DB_PASSWORD}
-    if [[ "$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_DATABASE}" -c "SELECT to_regclass('${DB_PREFIX}${table}');" | grep -c "${DB_PREFIX}${table}")" -eq 1 ]]; then
+    if [[ "$(psql -h "${STATUS_DB_SERVICE_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_DATABASE}" -c "SELECT to_regclass('${DB_PREFIX}${table}');" | grep -c "${DB_PREFIX}${table}")" -eq 1 ]]; then
         echo "Table ${DB_PREFIX}${table} exists! ..."
     else
         echo "Table ${DB_PREFIX}${table} does not exist! ..."
@@ -77,7 +78,7 @@ initialize_system() {
   APP_LOG=${APP_LOG:-errorlog}
 
   DB_DRIVER=${DB_DRIVER:-pgsql}
-  DB_HOST=${DB_HOST:-postgres}
+  DB_HOST=${STATUS_DB_SERVICE_HOST:-postgres}
   DB_DATABASE=${DB_DATABASE:-cachet}
   DB_PREFIX=${DB_PREFIX:-}
   DB_USER=${DB_USER:-postgres}
@@ -146,7 +147,7 @@ initialize_system() {
   sed 's,{{APP_LOG}},'"${APP_LOG}"',g' -i .env
 
   sed 's,{{DB_DRIVER}},'"${DB_DRIVER}"',g' -i .env
-  sed 's,{{DB_HOST}},'"${DB_HOST}"',g' -i .env
+  sed 's,{{DB_HOST}},'"${STATUS_DB_SERVICE_HOST}"',g' -i .env
   sed 's,{{DB_DATABASE}},'"${DB_DATABASE}"',g' -i .env
   sed 's,{{DB_PREFIX}},'"${DB_PREFIX}"',g' -i .env
   sed 's,{{DB_USER}},'"${DB_USER}"',g' -i .env
