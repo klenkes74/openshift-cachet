@@ -29,7 +29,7 @@ function remove_directory() {
 
 
     if [ -d ${DIRECTOR} ] ; then
-        echo -ne "removing ${DIRECTORY}"
+        echo -ne "removing ${DIRECTORY} ... "
         rm -rf ${DIRECTORY}
     fi
 }
@@ -80,6 +80,9 @@ function install() {
 
     echo -ne "installing ... "
     php /opt/app-root/bin/composer.phar install -o -q || exit 2
+
+    echo -ne "copy config ... "
+    cp conf/.env .env
 
     echo -ne "cleaning cache ... "
     rm -rf /opt/app-root/src/.composer
