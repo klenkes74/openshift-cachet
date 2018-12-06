@@ -234,7 +234,7 @@ objects:
     resources:
       limits:
         cpu: '1'
-        memory: 2Gi
+        memory: 2Gi 
     triggers:
     - type: 'ConfigChange'
     - type: 'ImageChange'
@@ -453,31 +453,37 @@ objects:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-appkey"
                   key: 'key'
+                  optional: true
             - name: 'APP_ENV'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'APP_ENV'
+                  optional: true
             - name: 'DEBUG'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'APP_DEBUG'
+                  optional: true
             - name: 'APP_DEBUG'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'APP_DEBUG'
+                  optional: true
             - name: 'APP_URL'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'APP_URL'
+                  optional: true
             - name: 'APP_LOG'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'APP_LOG'
+                  optional: true
 
             - name: 'DB_DRIVER'
               value: 'mysql'
@@ -514,128 +520,152 @@ objects:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
                   key: 'host'
+                  optional: true
             - name: 'MAIL_PORT'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
-                  key: 'MAIL_PORT'
+                  key: 'port'
+                  optional: true
             - name: 'port'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
-                  key: 'MAIL_ADDRESS'
+                  key: 'address'
+                  optional: true
             - name: 'address'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
                   key: 'name'
+                  optional: true
             - name: 'MAIL_ENCRYPTION'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
                   key: 'encryption'
+                  optional: true
             - name: 'MAIL_USERNAME'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
                   key: 'user'
+                  optional: true
             - name: 'MAIL_PASSWORD'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
                   key: 'password'
+                  optional: true
 
             - name: 'CACHE_DRIVER'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'CACHE_DRIVER'
+                  optional: true
 
             - name: 'SESSION_DRIVER'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'SESSION_DRIVER'
+                  optional: true
             - name: 'SESSION_DOMAIN'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'SESSION_DOMAIN'
+                  optional: true
             - name: 'SESSION_SECURE_COOKIE'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'SESSION_SECURE_COOKIE'
+                  optional: true
 
             - name: 'QUEUE_DRIVER'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'QUEUE_DRIVER'
+                  optional: true
             - name: 'CACHET_EMOJI'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'CACHET_EMOJI'
+                  optional: true
             - name: 'CACHET_BEACON'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'CACHET_BEACON'
+                  optional: true
             - name: 'CACHET_AUTO_TWITTER'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'CACHET_AUTO_TWITTER'
+                  optional: true
 
             - name: 'REDIS_HOST'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-redis-config"
                   key: 'host'
+                  optional: true
             - name: 'REDIS_DATABASE'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-redis-config"
                   key: 'database'
+                  optional: true
             - name: 'REDIS_PORT'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-redis-config"
                   key: 'port'
+                  optional: true
             - name: 'REDIS_PASSWORD'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-redis-config"
                   key: 'password'
+                  optional: true
 
             - name: 'GITHUB_TOKEN'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-github-config"
                   key: 'token'
+                  optional: true
 
             - name: 'NEXMO_KEY'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-nexmo-config"
                   key: 'key'
+                  optional: true
             - name: 'NEXMO_SECRET'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-nexmo-config"
                   key: 'secret'
+                  optional: true
             - name: 'NEXMO_SMS_FROM'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-nexmo-config"
                   key: 'from'
+                  optional: true
 
             - name: 'TRUSTED_PROXIES'
               valueFrom:
                 configMapKeyRef:
                   name: "${APPLICATION_NAME}-config"
                   key: 'TRUSTED_PROXIES'
+                  optional: true
 
 - kind: Service
   apiVersion: v1
