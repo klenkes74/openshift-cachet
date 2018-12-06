@@ -51,6 +51,9 @@ function download() {
     echo ${VERSION} > /opt/app-root/src/cachet-version.txt
 
     echo "done"
+
+    ls -l /opt/app-root/downloads
+
 }
 
 function download_installer() {
@@ -71,6 +74,7 @@ function download_installer() {
 
 
 function install() {
+
     echo -ne "Unpacking ... "
     tar --strip-components=1 -xzf /opt/app-root/downloads/cachet.tar.gz
 
