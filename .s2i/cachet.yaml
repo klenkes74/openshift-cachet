@@ -449,7 +449,7 @@ objects:
             initialDelayTimeout: 5
             timeoutSeconds: 1
             periodSeconds: 5
-          mountVolume:
+          mountVolumes:
             - name: 'config'
               mountPath: '/opt/app-root/src/config'
             - name: 'cache'
@@ -534,13 +534,13 @@ objects:
                   name: "${APPLICATION_NAME}-mail-config"
                   key: 'port'
                   optional: true
-            - name: 'port'
+            - name: 'MAIL_ADDRESS'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"
                   key: 'address'
                   optional: true
-            - name: 'address'
+            - name: 'MAIL_NAME'
               valueFrom:
                 secretKeyRef:
                   name: "${APPLICATION_NAME}-mail-config"

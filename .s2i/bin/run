@@ -138,7 +138,8 @@ initialize_system() {
 
   # configure env file
 
-  cd config
+  pwd
+  cd /opt/app-root/src/config
   cp ../.env.template .env
   sed 's,{{APP_ENV}},'"${APP_ENV}"',g' -i .env
   sed 's,{{APP_DEBUG}},'"${APP_DEBUG}"',g' -i .env
@@ -200,7 +201,7 @@ initialize_system() {
 
   # remove empty lines
   sed '/^.*=""$/d'  -i .env
-  cd ..
+  cd -
 
   rm -rf bootstrap/cache/*
 }
