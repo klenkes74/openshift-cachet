@@ -83,7 +83,7 @@ function install() {
     php /opt/app-root/bin/composer.phar install -o -q || exit 2
 
     echo -ne "copy config ... "
-    cp src/conf/.env .env
+    cp /tmp/src/conf/.env .env
 
     echo -ne "cleaning cache ... "
     rm -rf /opt/app-root/src/.composer
@@ -91,10 +91,6 @@ function install() {
 
     echo "done"
 }
-
-pwd
-ls -la
-find / -name ".env"
 
 setup_directories
 download ${CACHET_VERSION}
