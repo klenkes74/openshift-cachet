@@ -1,0 +1,103 @@
+#!/bin/bash -e
+#
+# Copyright (C) 2018  Kaiserpfalz-EDV Service, Roland T. Lichti
+# This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+# This is free software, and you are welcome to redistribute it
+# under certain conditions; type `show c' for details.
+#
+
+function create_directory() {
+    DIRECTORY=$1
+
+    if [ ! -d ${DIRECTORY} ] ; then
+        echo -ne "creating ${DIRECTORY} ... "
+        mkdir -p ${DIRECTORY}
+    fi
+}
+
+function setup_directories() {
+    echo -ne "Setup needed directories ... "
+
+    create_directory /opt/app-root/downloads
+    create_directory /opt/app-root/bin
+
+    echo "done"
+}
+
+function remove_directory() {
+    DIRECTORY=$1
+
+
+    if [ -d ${DIRECTOR} ] ; then
+        echo -ne "removing ${DIRECTORY} ... "
+        rm -rf ${DIRECTORY}
+    fi
+}
+
+function remove_directories() {
+    echo -ne "Removing installation directories ... "
+
+    remove_directory /opt/app-root/downloads
+    remove_directory /opt/app-root/bin
+    remove_directory src/.git
+
+    echo "done"
+}
+
+
+function download() {
+    VERSION=$1
+    echo -ne "Downloading cachet ${VERSION} ... "
+    curl -Ls https://github.com/cachethq/Cachet/archive/${VERSION}.tar.gz -o /opt/app-root/downloads/cachet.tar.gz || exit 1
+    echo ${VERSION} > /opt/app-root/src/cachet-version.txt
+
+    echo "done"
+}
+
+function download_installer() {
+    VERSION=$1
+
+    echo -ne "Downloading composer ${VERSION} ... "
+    curl -Ls https://getcomposer.org/installer -o /opt/app-root/downloads/composer-setup.php || exit 1
+    curl -Ls https://composer.github.io/installer.sig -o /opt/app-root/downloads/composer-setup.sig || exit 1
+
+    echo -ne "checking SHA384 checksum ... "
+    php -r "if (hash('SHA384', file_get_contents('/opt/app-root/downloads/composer-setup.php')) !== trim(file_get_contents('/opt/app-root/downloads/composer-setup.sig'))) { unlink('/opt/app-root/downloads/composer-setup.php'); echo 'FAILED' . PHP_EOL; exit(1); }" || exit 1
+
+    echo -ne " installing ... "
+    php /opt/app-root/downloads/composer-setup.php --quiet --version=${VERSION} --install-dir=/opt/app-root/bin || exit 1
+#    php /opt/app-root/downloads/composer-setup.php --quiet --version=${VERSION} --install-dir=/opt/app-root/bin >/dev/null || exit 1
+
+    echo "done"
+}
+
+
+function install() {
+    echo -ne "Installing requirements ... "
+    php /opt/app-root/bin/composer.phar global require "hirak/prestissimo:^0.3" -q || exit 2
+    echo "done"
+
+    echo -ne "Unpacking ... "
+    tar --strip-components=1 -xzf /opt/app-root/downloads/cachet.tar.gz
+
+    echo -ne "installing ... "
+    php /opt/app-root/bin/composer.phar install -o -q || exit 2
+
+    echo -ne "copy config ... "
+    cp /tmp/src/conf/.env .env.template
+    mkdir conf/
+    touch conf/.env
+    ln -s conf/.env .env
+    rm conf/.env
+
+    echo -ne "cleaning cache ... "
+    rm -rf /opt/app-root/src/.composer
+
+    echo "done"
+}
+
+setup_directories
+download ${CACHET_VERSION}
+download_installer ${PHP_COMPOSER_VERSION}
+install
+remove_directories
